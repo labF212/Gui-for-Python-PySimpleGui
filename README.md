@@ -12,3 +12,4 @@ pip3 install pillow                #permite usar mais tipos de imagens ao PySimp
 
 ## Exemplos: 
 https://www.blog.pythonlibrary.org/2019/10/31/the-demos-for-pysimplegui/
+https://pysimplegui.readthedocs.io/en/latest/#python-gui-for-humans-transforms-tkinter-qt-remi-wxpython-into-portable-people-friendly-pythonic-interfaces
