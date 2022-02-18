@@ -1,4 +1,4 @@
-# PySimpleGuy
+# PySimpleGui
 PySimpleGuy - Graphical interface for Python
 
 ## Como instalar e o que precisa:
