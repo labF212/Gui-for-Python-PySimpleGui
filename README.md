@@ -17,3 +17,5 @@ pip3 install pillow                #permite usar mais tipos de imagens ao PySimp
 
 
 ![Connection Diagram](https://github.com/labF212/PySimpleGui/blob/main/animations_history.png)
+
+Interface do programa: pysimplegui_history1.py
