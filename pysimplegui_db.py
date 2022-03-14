@@ -5,7 +5,8 @@ import PySimpleGUI as sg
 import sys
 from webbrowser import open
 from time import *
-#from datetime import datetime
+import back_gui
+
 
 sg.change_look_and_feel('DarkGrey')
 
@@ -24,17 +25,15 @@ LABEL_SIZE = (300,20)
 timebar = sg.Graph(LABEL_SIZE, (0, 0),(SAMPLES, 20), background_color=bcols[4], key='-TIMEBAR-',expand_x=True)
 history = sg.Graph(CANVAS_SIZE, (0, 0), (SAMPLES, SAMPLE_MAX),background_color=bcols[0], key='-HISTORY-',expand_x=True)
 
-# create an array of time and data value
-pt_values = []
-pt_times = []
-for i in range(SAMPLES+1): 
-    pt_values.append("")
-    pt_times.append("")
+logo = 0
+a = 0
 
 
 #Menus
 
-menu_def= [['&Menu',['S&obre','&Sair']]]
+menu_def= [['&Menu     ',['S&obre','&Sair']],['&Base de Dados',['&Guardar    ','&Parar','&Editar']]]
+
+
 
 #tray = sg.SystemTray(menu=menu_def,filename='ico.png')
 
@@ -77,14 +76,15 @@ right_box= [
         #[sg.Spin((0,100),initial_value=20,enable_events=True)]
         [sg.HSep()],
         [sg.Text('Registo do Histórico dos dados',expand_x=True,justification='center')],
-        [sg.Quit(button_color=('white', 'red')),sg.Button(button_text="Print Log", button_color=('white', 'green'),key="log"),
-         sg.Text('     ',  key='-OUTPUT-',text_color=bcols[1]),sg.Text('     ',  key='-OUTPUT1-',text_color=bcols[5])],
+        [sg.Button(button_text='Print Log', key="log",tooltip='Mostra os últimos 100 dados na consola'),sg.Button(button_text="Guardar", key="-START-",tooltip='Guarda os dados na base de dados'),
+        sg.Button(button_text="Parar", key="-STOP-",tooltip='Pára a gravação na base de dados'),
+         sg.Text('     ',size=(4,1),key='-OUTPUT-',text_color=bcols[1],background_color=bcols[0],justification='c'),sg.Text('     ',size=(4,1),key='-OUTPUT1-',text_color=bcols[5],background_color=bcols[0],justification='c')],
         [history],
         [timebar], 
         ]
 
 layout = [  
-            [sg.Menu(menu_def,tearoff=True)], #menu
+            [sg.Menu(menu_def,tearoff=False, pad=(10,10),font='16')], #menu
             
             [sg.Frame('   Leitura de Dados   ',frame_sup,font='15',expand_x=True,title_location='n')],
            
@@ -95,9 +95,36 @@ layout = [
            ]
 
 
+
 def update():
+    # create an array of time and data value
+    i=0
+    prev_x1,prev_y1=0,0
+    prev_x2,prev_y2=0,0
+    
+    global temp
+    global hum
+    global pt_times
+    global logo
+    global a
+    numero_amostras = 0
+
+    pt_values1 = []
+    pt_values2 =[]
+    pt_times = []
+    for i in range(SAMPLES+1): 
+        pt_values1.append("")
+        pt_values2.append("")
+        pt_times.append("")
+    
+    
+
     while 1:
-        sleep(1)
+        sleep(0.5)
+        
+
+        temp = randint(0,45)
+        hum =  randint(20,80)
         #ver tabela de letras que correspodem ao formato do relogio
         #https://www.programiz.com/python-programming/datetime/strftime
         time_string = strftime("%H:%M:%S")
@@ -143,6 +170,102 @@ def update():
 
 
 
+        #HISTÓRICO
+        #Get data point and time
+        data_pt1  = temp
+        data_pt2 = hum
+        
+        numero_amostras=numero_amostras+1
+        
+        now_time = strftime("%H:%M:%S")
+        
+        #update the point arrays
+        pt_values1[i]=data_pt1
+        pt_values2[i]=data_pt2
+
+        
+        pt_times[i]=str(now_time)
+
+        window['-OUTPUT-'].update(data_pt1)
+        window['-OUTPUT1-'].update(data_pt2)
+        
+        if data_pt1 > SAMPLE_MAX:
+            data_pt1 = SAMPLE_MAX
+        new_x1, new_y1 = i, data_pt1
+        if data_pt2 > SAMPLE_MAX:
+            data_pt2 = SAMPLE_MAX
+        new_x2, new_y2 = i, data_pt2
+        
+
+        if i >= SAMPLES:
+            # shift graph over if full of data
+            history.move(-STEP_SIZE, 0)
+            prev_x1 = prev_x1 - STEP_SIZE
+            prev_x2 = prev_x2 - STEP_SIZE
+            # shift the array data points
+            for i in range(SAMPLES):
+                pt_values1[i] = pt_values1[i+1]
+                pt_values2[i] = pt_values2[i+1]
+                pt_times[i] = pt_times[i+1]
+                        
+        history.draw_line((prev_x1, prev_y1), (new_x1, new_y1), color='red')
+        history.draw_line((prev_x2, prev_y2), (new_x2, new_y2), color='blue')    
+        
+        prev_x1, prev_y1 = new_x1, new_y1
+        prev_x2, prev_y2 = new_x2, new_y2
+
+        i += STEP_SIZE if i < SAMPLES else 0
+        
+            
+        timebar.erase()
+        
+        # add a scrolling time value 
+        time_x = i
+        timebar.draw_text(text=str(now_time), location=((time_x - 2),10) )
+        # add some extra times
+        if i >= SAMPLES:
+            timebar.draw_text(text=pt_times[int(SAMPLES * 0.25)], location=((int(time_x * 0.25) - 2),10) )
+            timebar.draw_text(text=pt_times[int(SAMPLES * 0.5)], location=((int(time_x * 0.5) - 2),10) )
+            timebar.draw_text(text=pt_times[int(SAMPLES * 0.75)], location=((int(time_x *0.75) - 2),10) )
+        if i > 10:
+            timebar.draw_text(text=pt_times[1], location=( 2,10) )
+
+        
+        while (logo==1 and a <= numero_amostras):
+        
+            if a==0:
+                print("\nReal Time Data\n")
+            
+            a=a+1
+            #print("\nReal Time Data\n")
+            if a <= 100:
+                if i>=a:
+                    #b=101-numero_amostras
+                    #print('b=',b)
+                    print (numero_amostras-a,pt_times[i-a],pt_values1[i-a],pt_values2[i-a])
+            else:
+                print (101-a,pt_times[i-a],pt_values1[i-a],pt_values2[i-a]) 
+
+            if a==numero_amostras or a==100:
+                
+                logo=0
+                #i=100
+                history.erase()
+                timebar.erase()
+                
+                
+
+            '''
+            if a==20:
+                a=0
+                i=0
+                break
+            '''
+
+
+        
+            
+            
 
 def second_window(): #about
     githublink='https://github.com/labF212/PySimpleGui'
@@ -168,7 +291,7 @@ def second_window(): #about
     #window.close() 
 
 # Create the Window
-window = sg.Window('Leituras de Temperaturas e Humidade', layout,titlebar_icon='ico.png',resizable=True,use_custom_titlebar=False,scaling=True,background_color=None)
+window = sg.Window('Leituras de Temperaturas e Humidade', layout,titlebar_icon='ico.png',resizable=True,use_custom_titlebar=False,scaling=True,background_color=None,finalize=True)
 
 progress_temp_bar=window['progressbar_temp']
 progress_temp_hum=window['progressbar_hum']
@@ -176,17 +299,15 @@ time_string=window['-HORA-']
 date_string = window['-DATA-']
 history = window['-HISTORY-']
 output  = window['-OUTPUT-']
-#output1  = window['-OUTPUT1-']
+output1  = window['-OUTPUT1-']
+threading.Thread(target=update,daemon=True).start()
 
 
 
-i=0
-prev_x,prev_y=0,0
 
 # Event Loop to process "events" and get the "values" of the inputs
 while True:
-    temp = randint(0,45)
-    hum =  randint(20,70)
+    
     event, values = window.read(timeout=2000)
     print('buton event',event)
     
@@ -209,16 +330,38 @@ while True:
 
     if event in ('Quit', None):
         break
+    
+    if event =='-START-':
+        ID = randint(1,9999)
+        TIMES = 1
+        TEMP = temp
+        HUM = hum
+        RELE = 0
+        '''
+        TIMES = values['-TIMES-']
+        TEMP = values['-TEMP-']
+        HUM = values['-HUM-']
+        RELE = values['-RELE-']
+        '''
 
+        if ID != '':
+        #dbase.write(ID,NAME)
+            back_gui.write(ID,TIMES,TEMP,HUM,RELE)
+    
+    if event =='Parar':
+        break
+       
     if event == 'log':
-        print("\nReal Time Data\n")
-        for j in range (SAMPLES+1):
-            if pt_times[j] =="":
-                break
-            print (pt_times[j],pt_values[j])
+        print("\nReal Time Data (last 5 data)\n")
+        print(a)
+        #print (pt_times,pt_values1,pt_values2)
+        logo = 1
+        a=0
+        
 
     print('buton event',event)
     print('You entered ', values[0])
+    #print('You entered ', pt_values2)
     val_min=int(values['-MINSPIN-'])
     val_max=int(values['-MAXSPIN-'])
 
@@ -244,58 +387,13 @@ while True:
         print("Humidade Elevada")
  
 
-    #Get data point and time
-    data_pt1  = temp
     
-    
-    now_time = strftime("%H:%M:%S")
-    
-    #update the point arrays
-    pt_values[i]=data_pt1
-    pt_times[i]=str(now_time)
-
-    window['-OUTPUT-'].update(data_pt1)
-    
-
-    if data_pt1 > SAMPLE_MAX:
-        data_pt1 = SAMPLE_MAX
-    new_x, new_y = i, data_pt1
-    
-
-
-    if i >= SAMPLES:
-        # shift graph over if full of data
-        history.move(-STEP_SIZE, 0)
-        prev_x = prev_x - STEP_SIZE
-        # shift the array data points
-        for i in range(SAMPLES):
-            pt_values[i] = pt_values[i+1]
-            pt_times[i] = pt_times[i+1]
-                    
-    history.draw_line((prev_x, prev_y), (new_x, new_y), color='red')
-    
-    
-    prev_x, prev_y = new_x, new_y
-    i += STEP_SIZE if i < SAMPLES else 0
-    
-        
-    timebar.erase()
-    # add a scrolling time value 
-    time_x = i
-    timebar.draw_text(text=str(now_time), location=((time_x - 2),7) )
-    # add some extra times
-    if i >= SAMPLES:
-        timebar.draw_text(text=pt_times[int(SAMPLES * 0.25)], location=((int(time_x * 0.25) - 2),7) )
-        timebar.draw_text(text=pt_times[int(SAMPLES * 0.5)], location=((int(time_x * 0.5) - 2),7) )
-        timebar.draw_text(text=pt_times[int(SAMPLES * 0.75)], location=((int(time_x *0.75) - 2),7) )
-    if i > 10:
-        timebar.draw_text(text=pt_times[1], location=( 2,7) )
     
     progress_temp_bar.UpdateBar(temp)
     progress_temp_hum.UpdateBar(hum)
     window['-TEXTTEMP-'].update(str(temp) + 'ºC')
     window['-TEXTHUM-'].update('    ' + str(hum) + '%')
-    threading.Thread(target=update,daemon=True).start()
+    
     
 
 window.close()

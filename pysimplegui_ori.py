@@ -5,31 +5,10 @@ import PySimpleGUI as sg
 import sys
 from webbrowser import open
 from time import *
-#from datetime import datetime
 
+#Tema do programa
 sg.change_look_and_feel('DarkGrey')
 
-
-#cores dos gráficos
-bcols = ['grey','red','yellow','black','white','blue']
-
-#Gráfico do Histórico
-STEP_SIZE = 1  # can adjust for more data saved than shown
-SAMPLES = 100 # number of point shown on the chart
-SAMPLE_MAX = 100 # high limit of data points
-CANVAS_SIZE = (300, 110)
-LABEL_SIZE = (300,20)
-
-
-timebar = sg.Graph(LABEL_SIZE, (0, 0),(SAMPLES, 20), background_color=bcols[4], key='-TIMEBAR-',expand_x=True)
-history = sg.Graph(CANVAS_SIZE, (0, 0), (SAMPLES, SAMPLE_MAX),background_color=bcols[0], key='-HISTORY-',expand_x=True)
-
-# create an array of time and data value
-pt_values = []
-pt_times = []
-for i in range(SAMPLES+1): 
-    pt_values.append("")
-    pt_times.append("")
 
 
 #Menus
@@ -75,12 +54,7 @@ right_box= [
         [sg.Text('Valor minimo: '),sg.Spin(initial_value=70, values=list(range(50,100)), enable_events=True,size=(5,5),key='-MAXSPIN-')],
         [sg.Text('Valor maximo:'),sg.Spin(initial_value=30, values=list(range(0,50)), enable_events=True,size=(5,5),key='-MINSPIN-')],
         #[sg.Spin((0,100),initial_value=20,enable_events=True)]
-        [sg.HSep()],
-        [sg.Text('Registo do Histórico dos dados',expand_x=True,justification='center')],
-        [sg.Quit(button_color=('white', 'red')),sg.Button(button_text="Print Log", button_color=('white', 'green'),key="log"),
-         sg.Text('     ',  key='-OUTPUT-',text_color=bcols[1]),sg.Text('     ',  key='-OUTPUT1-',text_color=bcols[5])],
-        [history],
-        [timebar], 
+        [sg.HSep()]
         ]
 
 layout = [  
@@ -174,19 +148,12 @@ progress_temp_bar=window['progressbar_temp']
 progress_temp_hum=window['progressbar_hum']
 time_string=window['-HORA-']
 date_string = window['-DATA-']
-history = window['-HISTORY-']
-output  = window['-OUTPUT-']
-#output1  = window['-OUTPUT1-']
-
-
-
-i=0
-prev_x,prev_y=0,0
+threading.Thread(target=update,daemon=True).start()
 
 # Event Loop to process "events" and get the "values" of the inputs
 while True:
     temp = randint(0,45)
-    hum =  randint(20,70)
+    hum =  randint(0,100)
     event, values = window.read(timeout=2000)
     print('buton event',event)
     
@@ -194,8 +161,6 @@ while True:
         open(githublink)
 
     if event == 'Sobre': # if user closes window or clicks cancel
-        #second_window()
-        #threading.Thread(target=second_window).start()
         second_window()
         #sg.popup('Este programa demonstra PySimplePy',title='Sobre')
         print(values)   
@@ -206,17 +171,6 @@ while True:
     
     if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
         break
-
-    if event in ('Quit', None):
-        break
-
-    if event == 'log':
-        print("\nReal Time Data\n")
-        for j in range (SAMPLES+1):
-            if pt_times[j] =="":
-                break
-            print (pt_times[j],pt_values[j])
-
     print('buton event',event)
     print('You entered ', values[0])
     val_min=int(values['-MINSPIN-'])
@@ -244,58 +198,10 @@ while True:
         print("Humidade Elevada")
  
 
-    #Get data point and time
-    data_pt1  = temp
-    
-    
-    now_time = strftime("%H:%M:%S")
-    
-    #update the point arrays
-    pt_values[i]=data_pt1
-    pt_times[i]=str(now_time)
-
-    window['-OUTPUT-'].update(data_pt1)
-    
-
-    if data_pt1 > SAMPLE_MAX:
-        data_pt1 = SAMPLE_MAX
-    new_x, new_y = i, data_pt1
-    
-
-
-    if i >= SAMPLES:
-        # shift graph over if full of data
-        history.move(-STEP_SIZE, 0)
-        prev_x = prev_x - STEP_SIZE
-        # shift the array data points
-        for i in range(SAMPLES):
-            pt_values[i] = pt_values[i+1]
-            pt_times[i] = pt_times[i+1]
-                    
-    history.draw_line((prev_x, prev_y), (new_x, new_y), color='red')
-    
-    
-    prev_x, prev_y = new_x, new_y
-    i += STEP_SIZE if i < SAMPLES else 0
-    
-        
-    timebar.erase()
-    # add a scrolling time value 
-    time_x = i
-    timebar.draw_text(text=str(now_time), location=((time_x - 2),7) )
-    # add some extra times
-    if i >= SAMPLES:
-        timebar.draw_text(text=pt_times[int(SAMPLES * 0.25)], location=((int(time_x * 0.25) - 2),7) )
-        timebar.draw_text(text=pt_times[int(SAMPLES * 0.5)], location=((int(time_x * 0.5) - 2),7) )
-        timebar.draw_text(text=pt_times[int(SAMPLES * 0.75)], location=((int(time_x *0.75) - 2),7) )
-    if i > 10:
-        timebar.draw_text(text=pt_times[1], location=( 2,7) )
-    
     progress_temp_bar.UpdateBar(temp)
     progress_temp_hum.UpdateBar(hum)
     window['-TEXTTEMP-'].update(str(temp) + 'ºC')
     window['-TEXTHUM-'].update('    ' + str(hum) + '%')
-    threading.Thread(target=update,daemon=True).start()
     
 
 window.close()

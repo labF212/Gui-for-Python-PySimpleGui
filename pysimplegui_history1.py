@@ -273,7 +273,7 @@ date_string = window['-DATA-']
 history = window['-HISTORY-']
 output  = window['-OUTPUT-']
 output1  = window['-OUTPUT1-']
-threading.Thread(target=update).start()
+threading.Thread(target=update,daemon=True).start()
 
 
 
