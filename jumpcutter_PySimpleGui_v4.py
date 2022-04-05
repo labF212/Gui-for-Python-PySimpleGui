@@ -63,7 +63,8 @@ layout = [
         [sg.Text('Advanced Options',justification='c',expand_x=True, font=('Inder',20), key='-AOPTIONS-')],
         [sg.Column(col21,vertical_alignment='top'),sg.Column(col22,vertical_alignment='top',expand_x=True)],
         [sg.HSep()],
-        [sg.Button('Export',expand_x=True,key='-EXPORT-')],
+        #[sg.Button('Export',expand_x=True,key='-EXPORT-')],
+        [sg.Button('Export',expand_x=True)],
         [sg.Text('Original by carykh - PySimpleGui by Petr Korda',key='-ORIGINAL-')]
         ]
 
@@ -76,8 +77,7 @@ while True:
     
     #Get Language
     language=str(values['-LANGUAGE-'])
-    
-    
+        
     if language == 'English':
         window['-LANG-'].update('Choose your Language:')
         window['-IN-'].update('Input File')
@@ -94,7 +94,7 @@ while True:
         window['-SRATE-'].update('Sample Rate')
         window['-ORIGINAL-'].update('Original by carykh - PySimpleGui by Petr Korda')
         window['Choose File'].update('Choose File')
-        window['-EXPORT-'].update('Export')
+        window['Export'].update('Export')
         #'-EXPORT-'
         
     if language == 'Português (PT)':
@@ -113,7 +113,7 @@ while True:
         window['-SRATE-'].update('Tempo de amostragem')
         window['-ORIGINAL-'].update('Original por carykh - PySimpleGui por Petr Korda')
         window['Choose File'].update('Escolha o Ficheiro')
-        window['-EXPORT-'].update('Exportar')
+        window['Export'].update('Exportar')
         
     #Get File Name
     File_name = str(values['-FILENAME-'])
