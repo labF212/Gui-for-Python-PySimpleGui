@@ -1,5 +1,5 @@
 # PySimpleGui
-PySimpleGui - Graphical interface for Python
+PySimpleGui - Graphical interface for Python (It is not free for professional or educational use)
 
 ## Como instalar e o que precisa:
 ```
